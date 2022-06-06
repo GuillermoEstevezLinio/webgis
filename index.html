@@ -1,0 +1,1131 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        #map {
+            width: auto;
+            height: 500px;
+            margin-top: 10px;
+            border-style: solid;
+            border-color: rgb(4, 48, 0);
+        }
+        </style>
+        <title>Camino de Santiago</title>
+    </head>
+    <body style="background-color: rgb(202, 245, 202);">
+        
+        <!------------------ CODIGO HTML ------------------>
+
+        <h1 style="color: brown; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">Camino de Santiago</h1>
+        <h2 style="color: rgb(255, 123, 0); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">Guía del viajero al Camino de Santiago</h2>
+        
+        <div style="float: right; margin-right: 50px; margin: 20px; "> 
+            <img src="imagen.jpg" alt="" width="400">
+        </div>
+        <div style="color: blue; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-left: 50px;">
+            <p>El Camino de Santiago es la ruta más conocida del mundo por su relevancia comercial y de peregrinación durante la Europa Medieval, debido principalmente a dos factores: su conexión con el resto de Europa y su aparición en forma de Guía en el Códice Calixtino.
+                Tambien es famoso por sus señalizaciones amarillas en forma de flecha que marcan este camino, los cuales fueron realizados por el Padre <b>Elías Valiña Sampedro</b> para impulsar su importancia.</p>
+            <p>El camino de Santiago correspondiente a la parte del camino Francés tiene una distancia en total de 764 km y está compuesto por un total de 33 etapas que comienzan en la localidad francesa de Saint Jean Pied de Port
+                (mayor información en el siguiente <a href="https://www.pilgrim.es/camino-frances/" target="_blank">link</a>).
+            </p>
+            <p>En el siguiente mapa indica la ruta del Camino de Santiago en Navarra: el camino Fránces. Aquí podrá encontrar:</p>
+            <ul>
+                <li>La ruta oficial del Camino de Santiago</li>
+                <li>La ruta real del Camino de Santiago</li>
+                <li>Los lugares donde dormir</li>
+                <li>Los lugares donde comer</li>
+                <li>Los principales recursos turísticos</li>
+            </ul>
+        </div>
+
+        <div id="map"></div>
+        <div style="color: blue; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;"><p>Guillermo Estévez Linio</p></div>
+
+        <!-------------------------------------------------->
+
+        <!--------------- SCRIPTS JAVASCRIPT --------------->
+
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/multi-style-layer.js"></script>
+        <script src="js/leaflet-svg-shape-markers.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.wms.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="data/Recursostursticos_2.js"></script>
+        <script src="data/Lugaresdondecomer_3.js"></script>
+        <script src="data/Lugaresdondedormir_4.js"></script>
+        <script src="data/CaminodeSantiagoreal_5.js"></script>
+        <script src="data/CaminodeSantiagooficial_6.js"></script>
+        
+        <script>
+
+        var coordenadas = [42.8, -1.7]
+        var zoom = 8.5  
+        var map = L.map('map', {
+            zoomControl:true, maxZoom:28, minZoom:1
+        }).setView(coordenadas, zoom);
+        
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+
+        ///////////////////////////// MAPA OSM /////////////////////////////
+        map.createPane('pane_OSM_0');
+        map.getPane('pane_OSM_0').style.zIndex = 400;
+        var layer_OSM_0 = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OSM_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors, CC-BY-SA</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OSM_0;
+        map.addLayer(layer_OSM_0);
+
+        ///////////////////////////// MAPA PNOA /////////////////////////////
+        map.createPane('pane_PNOA_1');
+        map.getPane('pane_PNOA_1').style.zIndex = 401;
+        var layer_PNOA_1 = L.WMS.layer("https://www.ign.es/wms-inspire/pnoa-ma", "OI.OrthoimageCoverage", {
+            pane: 'pane_PNOA_1',
+            format: 'image/png',
+            uppercase: true,
+            transparent: true,
+            continuousWorld : true,
+            tiled: true,
+            info_format: 'text/html',
+            opacity: 1,
+            identify: false,
+            attribution: '',
+        });
+        map.addLayer(layer_PNOA_1);
+
+        ///////////////////////////// CAPA RECURSOS TURISTICOS /////////////////////////////
+        function pop_Recursostursticos_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Tipo</th>\
+                        <td>' + (feature.properties['TIPO'] !== null ? autolinker.link(feature.properties['TIPO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Recurso</th>\
+                        <td>' + (feature.properties['RECTUR'] !== null ? autolinker.link(feature.properties['RECTUR'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Zona</th>\
+                        <td>' + (feature.properties['ZONATUR'] !== null ? autolinker.link(feature.properties['ZONATUR'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Dirección</th>\
+                        <td>' + (feature.properties['DIRECCION'] !== null ? autolinker.link(feature.properties['DIRECCION'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Teléfono</th>\
+                        <td>' + (feature.properties['TELEFONO'] !== null ? autolinker.link(feature.properties['TELEFONO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Correo</th>\
+                        <td>' + (feature.properties['EMAIL'] !== null ? autolinker.link(feature.properties['EMAIL'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Página web</th>\
+                        <td>' + (feature.properties['URL'] !== null ? autolinker.link(feature.properties['URL'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Recursostursticos_2_0(feature) {
+            switch(String(feature.properties['TIPO'])) {
+                case 'Áreas recreativo-comerciales':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(100,102,217,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Cañones':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(60,201,175,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Castillos/Palacios':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(204,213,102,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Catedrales':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(61,130,233,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Centros medioambientales':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(180,103,203,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Conjuntos amurallados':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(117,216,178,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Conjuntos históricos':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(222,75,87,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Cuevas':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(107,218,155,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Edificios públicos de interés':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(220,206,97,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Empresas de Turismo Activo':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(130,214,115,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Empresas de Turismo Activo y Cultural':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(31,211,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Empresas de Turismo Cultural':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(228,62,203,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Escultura':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(131,233,77,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Espacios expositivos':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(217,160,37,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Espacios termolúdicos':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(226,128,30,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Iglesias y ermitas':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(140,159,236,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Miradores':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(162,87,220,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Molinos':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,69,13,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Monasterios':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(19,219,66,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Monumentos megalíticos':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(239,110,170,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Museos':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(126,209,232,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Obras de ingeniería':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,60,180,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Oficinas de Turismo':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,166,217,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Parques de ocio y aventura':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(207,74,214,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Patrimonio etnográfico':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(173,225,113,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Pistas de hielo':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(161,123,221,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Planetarios':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(138,121,218,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Restos arqueológicos':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(222,112,142,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Salineras':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(24,227,34,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Teatros y auditorios':
+                    return {
+                pane: 'pane_Recursostursticos_2',
+                shape: 'diamond',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(184,235,45,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        
+        map.createPane('pane_Recursostursticos_2');
+        map.getPane('pane_Recursostursticos_2').style.zIndex = 402;
+        map.getPane('pane_Recursostursticos_2').style['mix-blend-mode'] = 'normal';
+        var layer_Recursostursticos_2 = new L.geoJson(json_Recursostursticos_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Recursostursticos_2',
+            layerName: 'layer_Recursostursticos_2',
+            pane: 'pane_Recursostursticos_2',
+            onEachFeature: pop_Recursostursticos_2,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_Recursostursticos_2_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Recursostursticos_2);
+        map.addLayer(layer_Recursostursticos_2);
+
+        ///////////////////////////// CAPA LUGARES DONDE COMER /////////////////////////////
+        function pop_Lugaresdondecomer_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Municipio</th>\
+                        <td>' + (feature.properties['MUNICIPIO'] !== null ? autolinker.link(feature.properties['MUNICIPIO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Categoría</th>\
+                        <td>' + (feature.properties['CATEGORIA'] !== null ? autolinker.link(feature.properties['CATEGORIA'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Recurso</th>\
+                        <td>' + (feature.properties['RECTUR'] !== null ? autolinker.link(feature.properties['RECTUR'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Dirección</th>\
+                        <td>' + (feature.properties['DIRECCION'] !== null ? autolinker.link(feature.properties['DIRECCION'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Teléfono</th>\
+                        <td>' + (feature.properties['TELEFONO'] !== null ? autolinker.link(feature.properties['TELEFONO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Descripción</th>\
+                        <td>' + (feature.properties['DESCRIPCIO'] !== null ? autolinker.link(feature.properties['DESCRIPCIO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Lugaresdondecomer_3_0(feature) {
+            switch(String(feature.properties['CATEGORIA'])) {
+                case '2 sardexka / 2 tenedores':
+                    return {
+                pane: 'pane_Lugaresdondecomer_3',
+                shape: 'triangle',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(61,128,53,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(205,187,53,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Dos tenedores':
+                    return {
+                pane: 'pane_Lugaresdondecomer_3',
+                shape: 'triangle',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(61,128,53,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(205,77,72,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Sardexka 1 / 1 tenedor':
+                    return {
+                pane: 'pane_Lugaresdondecomer_3',
+                shape: 'triangle',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(61,128,53,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(80,21,219,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Sin categoría':
+                    return {
+                pane: 'pane_Lugaresdondecomer_3',
+                shape: 'triangle',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(61,128,53,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(142,196,240,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Tres tenedores':
+                    return {
+                pane: 'pane_Lugaresdondecomer_3',
+                shape: 'triangle',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(61,128,53,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(92,216,47,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Un tenedor':
+                    return {
+                pane: 'pane_Lugaresdondecomer_3',
+                shape: 'triangle',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(61,128,53,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(225,64,201,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Lugaresdondecomer_3');
+        map.getPane('pane_Lugaresdondecomer_3').style.zIndex = 403;
+        map.getPane('pane_Lugaresdondecomer_3').style['mix-blend-mode'] = 'normal';
+        var layer_Lugaresdondecomer_3 = new L.geoJson(json_Lugaresdondecomer_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Lugaresdondecomer_3',
+            layerName: 'layer_Lugaresdondecomer_3',
+            pane: 'pane_Lugaresdondecomer_3',
+            onEachFeature: pop_Lugaresdondecomer_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_Lugaresdondecomer_3_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Lugaresdondecomer_3);
+        map.addLayer(layer_Lugaresdondecomer_3);
+
+        ///////////////////////////// CAPA LUGARES DONDE DORMIR /////////////////////////////
+        function pop_Lugaresdondedormir_4(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Municipio</th>\
+                        <td>' + (feature.properties['MUNICIPIO'] !== null ? autolinker.link(feature.properties['MUNICIPIO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tipo</th>\
+                        <td>' + (feature.properties['TIPO'] !== null ? autolinker.link(feature.properties['TIPO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Categoría</th>\
+                        <td>' + (feature.properties['CATEGORIA'] !== null ? autolinker.link(feature.properties['CATEGORIA'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Recurso</th>\
+                        <td>' + (feature.properties['RECTUR'] !== null ? autolinker.link(feature.properties['RECTUR'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Dirección</th>\
+                        <td>' + (feature.properties['DIRECCION'] !== null ? autolinker.link(feature.properties['DIRECCION'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Teléfono</th>\
+                        <td>' + (feature.properties['TELEFONO'] !== null ? autolinker.link(feature.properties['TELEFONO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Descripción</th>\
+                        <td>' + (feature.properties['DESCRIPCIO'] !== null ? autolinker.link(feature.properties['DESCRIPCIO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Lugaresdondedormir_4_0(feature) {
+            switch(String(feature.properties['TIPO'])) {
+                case 'Albergue / Aterpea':
+                    return {
+                pane: 'pane_Lugaresdondedormir_4',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(236,167,88,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Apartamento rural / Landa apartamentua':
+                    return {
+                pane: 'pane_Lugaresdondedormir_4',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(31,211,172,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Casa Rural / Baserri-etxea':
+                    return {
+                pane: 'pane_Lugaresdondedormir_4',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(31,112,205,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Hostal o Pensión / Ostatua edo Pentsioa':
+                    return {
+                pane: 'pane_Lugaresdondedormir_4',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(164,219,26,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Hotel':
+                    return {
+                pane: 'pane_Lugaresdondedormir_4',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(234,67,103,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Hotel / Hotela':
+                    return {
+                pane: 'pane_Lugaresdondedormir_4',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(124,236,128,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Vivienda turística/Etxebizitza turistikoa':
+                    return {
+                pane: 'pane_Lugaresdondedormir_4',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(226,105,222,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Lugaresdondedormir_4');
+        map.getPane('pane_Lugaresdondedormir_4').style.zIndex = 404;
+        map.getPane('pane_Lugaresdondedormir_4').style['mix-blend-mode'] = 'normal';
+        var layer_Lugaresdondedormir_4 = new L.geoJson(json_Lugaresdondedormir_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Lugaresdondedormir_4',
+            layerName: 'layer_Lugaresdondedormir_4',
+            pane: 'pane_Lugaresdondedormir_4',
+            onEachFeature: pop_Lugaresdondedormir_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Lugaresdondedormir_4_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Lugaresdondedormir_4);
+        map.addLayer(layer_Lugaresdondedormir_4);
+        function pop_CaminodeSantiagoreal_5(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TRAMO'] !== null ? autolinker.link(feature.properties['TRAMO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        ///////////////////////////// CAPA CAMINO DE SANTIAGO - REAL /////////////////////////////        
+        function style_CaminodeSantiagoreal_5_0() {
+            return {
+                pane: 'pane_CaminodeSantiagoreal_5',
+                opacity: 1,
+                color: 'rgba(255,153,0,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+        map.createPane('pane_CaminodeSantiagoreal_5');
+        map.getPane('pane_CaminodeSantiagoreal_5').style.zIndex = 405;
+        map.getPane('pane_CaminodeSantiagoreal_5').style['mix-blend-mode'] = 'normal';
+        var layer_CaminodeSantiagoreal_5 = new L.geoJson(json_CaminodeSantiagoreal_5, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_CaminodeSantiagoreal_5',
+            layerName: 'layer_CaminodeSantiagoreal_5',
+            pane: 'pane_CaminodeSantiagoreal_5',
+            onEachFeature: pop_CaminodeSantiagoreal_5,
+            style: style_CaminodeSantiagoreal_5_0,
+        });
+        bounds_group.addLayer(layer_CaminodeSantiagoreal_5);
+        map.addLayer(layer_CaminodeSantiagoreal_5);
+
+        ///////////////////////////// CAPA CAMINO DE SANTIAGO - OFICIAL /////////////////////////////
+        function pop_CaminodeSantiagooficial_6(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TRAMO'] !== null ? autolinker.link(feature.properties['TRAMO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_CaminodeSantiagooficial_6_0() {
+            return {
+                pane: 'pane_CaminodeSantiagooficial_6',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+        function style_CaminodeSantiagooficial_6_1() {
+            return {
+                pane: 'pane_CaminodeSantiagooficial_6',
+                opacity: 1,
+                color: 'rgba(255,17,144,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 3.0,
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+
+        map.createPane('pane_CaminodeSantiagooficial_6');
+        map.getPane('pane_CaminodeSantiagooficial_6').style.zIndex = 406;
+        map.getPane('pane_CaminodeSantiagooficial_6').style['mix-blend-mode'] = 'normal';
+        var layer_CaminodeSantiagooficial_6 = new L.geoJson.multiStyle(json_CaminodeSantiagooficial_6, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_CaminodeSantiagooficial_6',
+            layerName: 'layer_CaminodeSantiagooficial_6',
+            pane: 'pane_CaminodeSantiagooficial_6',
+            onEachFeature: pop_CaminodeSantiagooficial_6,
+            styles: [style_CaminodeSantiagooficial_6_0,style_CaminodeSantiagooficial_6_1,]
+        });
+        bounds_group.addLayer(layer_CaminodeSantiagooficial_6);
+        map.addLayer(layer_CaminodeSantiagooficial_6);
+        var baseMaps = {"PNOA": layer_PNOA_1, "OSM": layer_OSM_0};
+        L.control.layers(baseMaps,{'<img src="legend/CaminodeSantiagooficial_6.png" /> Camino de Santiago (oficial)': layer_CaminodeSantiagooficial_6,'<img src="legend/CaminodeSantiagoreal_5.png" /> Camino de Santiago (real)': layer_CaminodeSantiagoreal_5,'Lugares donde dormir<br /><table><tr><td style="text-align: center;"><img src="legend/Lugaresdondedormir_4_AlbergueAterpea0.png" /></td><td>Albergue / Aterpea</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondedormir_4_ApartamentoruralLandaapartamentua1.png" /></td><td>Apartamento rural / Landa apartamentua</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondedormir_4_CasaRuralBaserrietxea2.png" /></td><td>Casa Rural / Baserri-etxea</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondedormir_4_HostaloPensiónOstatuaedoPentsioa3.png" /></td><td>Hostal o Pensión / Ostatua edo Pentsioa</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondedormir_4_Hotel4.png" /></td><td>Hotel</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondedormir_4_HotelHotela5.png" /></td><td>Hotel / Hotela</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondedormir_4_ViviendaturísticaEtxebizitzaturistikoa6.png" /></td><td>Vivienda turística/Etxebizitza turistikoa</td></tr></table>': layer_Lugaresdondedormir_4,'Lugares donde comer<br /><table><tr><td style="text-align: center;"><img src="legend/Lugaresdondecomer_3_2sardexka2tenedores0.png" /></td><td>2 sardexka / 2 tenedores</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondecomer_3_Dostenedores1.png" /></td><td>Dos tenedores</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondecomer_3_Sardexka11tenedor2.png" /></td><td>Sardexka 1 / 1 tenedor</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondecomer_3_Sincategoría3.png" /></td><td>Sin categoría</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondecomer_3_Trestenedores4.png" /></td><td>Tres tenedores</td></tr><tr><td style="text-align: center;"><img src="legend/Lugaresdondecomer_3_Untenedor5.png" /></td><td>Un tenedor</td></tr></table>': layer_Lugaresdondecomer_3,'Recursos turísticos<br /><table><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Áreasrecreativocomerciales0.png" /></td><td>Áreas recreativo-comerciales</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Cañones1.png" /></td><td>Cañones</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_CastillosPalacios2.png" /></td><td>Castillos/Palacios</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Catedrales3.png" /></td><td>Catedrales</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Centrosmedioambientales4.png" /></td><td>Centros medioambientales</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Conjuntosamurallados5.png" /></td><td>Conjuntos amurallados</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Conjuntoshistóricos6.png" /></td><td>Conjuntos históricos</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Cuevas7.png" /></td><td>Cuevas</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Edificiospúblicosdeinterés8.png" /></td><td>Edificios públicos de interés</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_EmpresasdeTurismoActivo9.png" /></td><td>Empresas de Turismo Activo</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_EmpresasdeTurismoActivoyCultural10.png" /></td><td>Empresas de Turismo Activo y Cultural</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_EmpresasdeTurismoCultural11.png" /></td><td>Empresas de Turismo Cultural</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Escultura12.png" /></td><td>Escultura</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Espaciosexpositivos13.png" /></td><td>Espacios expositivos</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Espaciostermolúdicos14.png" /></td><td>Espacios termolúdicos</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Iglesiasyermitas15.png" /></td><td>Iglesias y ermitas</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Miradores16.png" /></td><td>Miradores</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Molinos17.png" /></td><td>Molinos</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Monasterios18.png" /></td><td>Monasterios</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Monumentosmegalíticos19.png" /></td><td>Monumentos megalíticos</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Museos20.png" /></td><td>Museos</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Obrasdeingeniería21.png" /></td><td>Obras de ingeniería</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_OficinasdeTurismo22.png" /></td><td>Oficinas de Turismo</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Parquesdeocioyaventura23.png" /></td><td>Parques de ocio y aventura</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Patrimonioetnográfico24.png" /></td><td>Patrimonio etnográfico</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Pistasdehielo25.png" /></td><td>Pistas de hielo</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Planetarios26.png" /></td><td>Planetarios</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Restosarqueológicos27.png" /></td><td>Restos arqueológicos</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Salineras28.png" /></td><td>Salineras</td></tr><tr><td style="text-align: center;"><img src="legend/Recursostursticos_2_Teatrosyauditorios29.png" /></td><td>Teatros y auditorios</td></tr></table>': layer_Recursostursticos_2}).addTo(map);
+        setBounds();
+        
+        </script>
+        <!-------------------------------------------------->
+
+    </body>
+</html>
